@@ -174,7 +174,7 @@ func (c *DatasetClient) doGet(url string) (*http.Response, error) {
 }
 
 func (c *DatasetClient) SearchDatasets(query string, page, limit int) (*DatasetsResult, error) {
-	url := fmt.Sprintf("%s/datasets?query=%s&page=%d&resultPerPage=%d", c.v2Base, query, page, limit)
+	url := fmt.Sprintf("%s/datasets?query=%s&page=%d&resultPerPage=%d", c.v2Base, url.QueryEscape(query), page, limit)
 	resp, err := c.doGet(url)
 	if err != nil {
 		return nil, err
