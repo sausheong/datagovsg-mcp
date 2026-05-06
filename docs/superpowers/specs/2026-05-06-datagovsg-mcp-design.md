@@ -5,7 +5,7 @@
 
 ## Overview
 
-A Go MCP server that gives Claude (and any MCP-compatible client) access to Singapore's public data via [data.gov.sg](https://data.gov.sg). Covers ~4,500 historical datasets and 13 real-time feeds across environment, weather, and transport.
+A Go MCP server that gives Claude (and any MCP-compatible client) access to Singapore's public data via [data.gov.sg](https://data.gov.sg). Covers ~4,500 historical datasets and 14 real-time feeds across environment, weather, and transport.
 
 ---
 
@@ -101,7 +101,7 @@ Get full detail for a specific collection, including its child dataset IDs.
 
 **Returns:** `{ collectionId, name, description, managedByAgencyName, frequency, sources[], childDatasets[] }`
 
-**Upstream:** `GET /v2/public/api/collections/{id}`
+**Upstream:** `GET /v2/public/api/collections/{id}/metadata`
 
 ---
 
