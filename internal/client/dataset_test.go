@@ -162,3 +162,78 @@ func TestGetCollectionInfo(t *testing.T) {
 		t.Errorf("expected 471, got %s", info.CollectionId)
 	}
 }
+
+func TestQueryDataset(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/action/datastore_search" {
+			http.NotFound(w, r)
+			return
+		}
+		if r.URL.Query().Get("resource_id") != "d_abc" {
+			t.Errorf("unexpected resource_id: %s", r.URL.Query().Get("resource_id"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ckanResponse{
+			Success: true,
+			Result: CKANResult{
+				Fields:  []CKANField{{ID: "period", Type: "text"}, {ID: "_id", Type: "int4"}},
+				Records: []map[string]interface{}{{"_id": 1, "period": "1992-03"}},
+				Total:   1,
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := newTestDatasetClient(srv.URL)
+	result, err := c.QueryDataset("d_abc", nil, 10, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Total != 1 {
+		t.Errorf("expected total 1, got %d", result.Total)
+	}
+	if len(result.Records) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(result.Records))
+	}
+}
+
+func TestQueryDataset_WithFilters(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		filters := r.URL.Query().Get("filters")
+		if filters == "" {
+			t.Error("expected filters param")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ckanResponse{
+			Success: true,
+			Result:  CKANResult{Fields: []CKANField{}, Records: []map[string]interface{}{}, Total: 0},
+		})
+	}))
+	defer srv.Close()
+
+	c := newTestDatasetClient(srv.URL)
+	_, err := c.QueryDataset("d_abc", map[string]string{"residential_status": "overall"}, 10, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestQueryDataset_CKANError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(ckanResponse{
+			Success: false,
+			Error: &struct {
+				Type    string   `json:"__type"`
+				Message []string `json:"message"`
+			}{Type: "Validation Error", Message: []string{"invalid resource_id"}},
+		})
+	}))
+	defer srv.Close()
+
+	c := newTestDatasetClient(srv.URL)
+	_, err := c.QueryDataset("bad_id", nil, 10, 0)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}

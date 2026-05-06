@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -257,4 +260,50 @@ func (c *DatasetClient) GetCollectionInfo(collectionID string) (*Collection, err
 	}
 	col := body.Data.CollectionMetadata
 	return &col, nil
+}
+
+func (c *DatasetClient) QueryDataset(datasetID string, filters map[string]string, limit, offset int) (*CKANResult, error) {
+	params := url.Values{}
+	params.Set("resource_id", datasetID)
+	params.Set("limit", strconv.Itoa(limit))
+	params.Set("offset", strconv.Itoa(offset))
+	if len(filters) > 0 {
+		filterJSON, err := json.Marshal(filters)
+		if err != nil {
+			return nil, err
+		}
+		params.Set("filters", string(filterJSON))
+	}
+
+	fullURL := c.ckanURL + "?" + params.Encode()
+	resp, err := c.doGet(fullURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, apiError(resp.StatusCode, "query_dataset failed")
+	}
+
+	var body ckanResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	if !body.Success {
+		msg := "ckan error"
+		if body.Error != nil && len(body.Error.Message) > 0 {
+			msg = strings.Join(body.Error.Message, "; ")
+		}
+		return nil, fmt.Errorf("query failed: %s", msg)
+	}
+	return &body.Result, nil
+}
+
+func NewDatasetClientWithConfig(v2Base, ckanURL string, timeout time.Duration) *DatasetClient {
+	return &DatasetClient{
+		http:    &http.Client{Timeout: timeout},
+		v2Base:  v2Base,
+		ckanURL: ckanURL,
+	}
 }
