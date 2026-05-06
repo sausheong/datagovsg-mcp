@@ -1,0 +1,143 @@
+package client
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+)
+
+const (
+	v2BaseURL = "https://api-production.data.gov.sg/v2/public/api"
+	ckanURL   = "https://data.gov.sg/api/action/datastore_search"
+	userAgent = "datagovsg-mcp/1.0"
+)
+
+type DatasetClient struct {
+	http    *http.Client
+	v2Base  string
+	ckanURL string
+}
+
+func NewDatasetClient() *DatasetClient {
+	return &DatasetClient{
+		http:    &http.Client{Timeout: 15 * time.Second},
+		v2Base:  v2BaseURL,
+		ckanURL: ckanURL,
+	}
+}
+
+// Dataset list types
+
+type Dataset struct {
+	DatasetId           string `json:"datasetId"`
+	Name                string `json:"name"`
+	Description         string `json:"description"`
+	Format              string `json:"format"`
+	Status              string `json:"status"`
+	ManagedByAgencyName string `json:"managedByAgencyName"`
+	CoverageStart       string `json:"coverageStart"`
+	CoverageEnd         string `json:"coverageEnd"`
+	LastUpdatedAt       string `json:"lastUpdatedAt"`
+}
+
+type DatasetsResult struct {
+	Datasets      []Dataset `json:"datasets"`
+	Pages         int       `json:"pages"`
+	TotalRowCount int       `json:"totalRowCount"`
+}
+
+type datasetsResponse struct {
+	Code     int            `json:"code"`
+	Data     DatasetsResult `json:"data"`
+	ErrorMsg string         `json:"errorMsg"`
+}
+
+// Dataset metadata types
+
+type ColumnMeta struct {
+	Name          string `json:"name"`
+	ColumnTitle   string `json:"columnTitle"`
+	DataType      string `json:"dataType"`
+	UnitOfMeasure string `json:"unitOfMeasure,omitempty"`
+	IsCategorical bool   `json:"isCategorical"`
+}
+
+type ColumnMetadata struct {
+	Order       []string              `json:"order"`
+	Map         map[string]string     `json:"map"`
+	MetaMapping map[string]ColumnMeta `json:"metaMapping"`
+}
+
+type DatasetMetadata struct {
+	DatasetId      string         `json:"datasetId"`
+	Name           string         `json:"name"`
+	Description    string         `json:"description"`
+	Format         string         `json:"format"`
+	ManagedBy      string         `json:"managedBy"`
+	CoverageStart  string         `json:"coverageStart"`
+	CoverageEnd    string         `json:"coverageEnd"`
+	ColumnMetadata ColumnMetadata `json:"columnMetadata"`
+}
+
+type metadataResponse struct {
+	Code     int             `json:"code"`
+	Data     DatasetMetadata `json:"data"`
+	ErrorMsg string          `json:"errorMsg"`
+}
+
+// Collections types
+
+type Collection struct {
+	CollectionId        string   `json:"collectionId"`
+	Name                string   `json:"name"`
+	Description         string   `json:"description"`
+	ManagedByAgencyName string   `json:"managedByAgencyName"`
+	ManagedBy           string   `json:"managedBy"`
+	Frequency           string   `json:"frequency"`
+	Sources             []string `json:"sources"`
+	ChildDatasets       []string `json:"childDatasets"`
+}
+
+type CollectionsResult struct {
+	Collections []Collection `json:"collections"`
+}
+
+type collectionsResponse struct {
+	Code     int               `json:"code"`
+	Data     CollectionsResult `json:"data"`
+	ErrorMsg string            `json:"errorMsg"`
+}
+
+type collectionMetaResponse struct {
+	Code int `json:"code"`
+	Data struct {
+		CollectionMetadata Collection `json:"collectionMetadata"`
+	} `json:"data"`
+	ErrorMsg string `json:"errorMsg"`
+}
+
+// CKAN query types
+
+type CKANField struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+type CKANResult struct {
+	Fields  []CKANField              `json:"fields"`
+	Records []map[string]interface{} `json:"records"`
+	Total   int                      `json:"total"`
+}
+
+type ckanResponse struct {
+	Success bool       `json:"success"`
+	Result  CKANResult `json:"result"`
+	Error   *struct {
+		Type    string   `json:"__type"`
+		Message []string `json:"message"`
+	} `json:"error"`
+}
+
+func apiError(code int, msg string) error {
+	return fmt.Errorf("upstream error %d: %s", code, msg)
+}
