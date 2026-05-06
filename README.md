@@ -30,6 +30,16 @@ A typical dataset query follows three steps:
 2. **Inspect its schema** — `get_dataset_metadata` with the returned dataset ID
 3. **Query records** — `query_dataset` with column filters from the schema
 
+## Examples
+
+### Claude Code
+
+![Claude Code using the datagovsg MCP server](claudecode.png)
+
+### Felix
+
+![Felix using the datagovsg MCP server](felix.png)
+
 ## Installation
 
 ### Build from source
