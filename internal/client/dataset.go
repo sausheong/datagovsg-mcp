@@ -1,6 +1,7 @@
 package client
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -140,4 +141,53 @@ type ckanResponse struct {
 
 func apiError(code int, msg string) error {
 	return fmt.Errorf("upstream error %d: %s", code, msg)
+}
+
+func (c *DatasetClient) doGet(url string) (*http.Response, error) {
+	var (
+		resp *http.Response
+		err  error
+	)
+	for attempt := 0; attempt < 2; attempt++ {
+		if attempt > 0 {
+			time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
+		}
+		req, reqErr := http.NewRequest(http.MethodGet, url, nil)
+		if reqErr != nil {
+			return nil, reqErr
+		}
+		req.Header.Set("User-Agent", userAgent)
+		resp, err = c.http.Do(req)
+		if err != nil {
+			continue
+		}
+		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
+			resp.Body.Close()
+			continue
+		}
+		return resp, nil
+	}
+	return resp, err
+}
+
+func (c *DatasetClient) SearchDatasets(query string, page, limit int) (*DatasetsResult, error) {
+	url := fmt.Sprintf("%s/datasets?query=%s&page=%d&resultPerPage=%d", c.v2Base, query, page, limit)
+	resp, err := c.doGet(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, apiError(resp.StatusCode, "search_datasets failed")
+	}
+
+	var body datasetsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	if body.ErrorMsg != "" {
+		return nil, fmt.Errorf("api error: %s", body.ErrorMsg)
+	}
+	return &body.Data, nil
 }
