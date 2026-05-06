@@ -16,7 +16,7 @@ import (
 )
 
 func newTestDatasetClientForTools(serverURL string) *client.DatasetClient {
-	return client.NewDatasetClientWithConfig(serverURL+"/v2/public/api", serverURL+"/api/action/datastore_search", 5*time.Second)
+	return client.NewDatasetClientWithConfig(serverURL+"/v2/public/api", serverURL+"/api/action/datastore_search", "", 5*time.Second)
 }
 
 func callTool(s *server.MCPServer, name string, args map[string]any) (*mcp.CallToolResult, error) {

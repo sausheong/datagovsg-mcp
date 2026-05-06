@@ -14,7 +14,7 @@ import (
 )
 
 func newTestRealtimeClientForTools(serverURL string) *client.RealtimeClient {
-	return client.NewRealtimeClientWithConfig(serverURL+"/v1", 5*time.Second)
+	return client.NewRealtimeClientWithConfig(serverURL+"/v1", "", 5*time.Second)
 }
 
 func TestGetEnvironmentReadingTool(t *testing.T) {

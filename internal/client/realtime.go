@@ -36,19 +36,22 @@ var validTransportTypes = map[string]string{
 type RealtimeClient struct {
 	http    *http.Client
 	baseURL string
+	apiKey  string
 }
 
-func NewRealtimeClient() *RealtimeClient {
+func NewRealtimeClient(apiKey string) *RealtimeClient {
 	return &RealtimeClient{
 		http:    &http.Client{Timeout: 15 * time.Second},
 		baseURL: realtimeBaseURL,
+		apiKey:  apiKey,
 	}
 }
 
-func NewRealtimeClientWithConfig(baseURL string, timeout time.Duration) *RealtimeClient {
+func NewRealtimeClientWithConfig(baseURL, apiKey string, timeout time.Duration) *RealtimeClient {
 	return &RealtimeClient{
 		http:    &http.Client{Timeout: timeout},
 		baseURL: baseURL,
+		apiKey:  apiKey,
 	}
 }
 
@@ -66,6 +69,9 @@ func (c *RealtimeClient) doGet(url string) ([]byte, error) {
 			return nil, reqErr
 		}
 		req.Header.Set("User-Agent", userAgent)
+		if c.apiKey != "" {
+			req.Header.Set("Authorization", c.apiKey)
+		}
 
 		resp, doErr := c.http.Do(req)
 		if doErr != nil {

@@ -64,6 +64,19 @@ Starts a streamable HTTP server for remote or multi-client use:
 
 The MCP endpoint is available at `http://localhost:8080/mcp`.
 
+## API key
+
+An API key from [data.gov.sg](https://data.gov.sg) is optional but recommended — it unlocks higher rate limits and priority support.
+
+Set it via the `DATAGOVSG_API_KEY` environment variable before starting the server:
+
+```bash
+export DATAGOVSG_API_KEY=your_api_key_here
+./datagovsg-mcp
+```
+
+Without a key the server works fine but is subject to anonymous rate limits.
+
 ## MCP client configuration
 
 ### Claude Code
@@ -122,7 +135,7 @@ make clean     # remove binary
 - **Datasets API** — [data.gov.sg](https://data.gov.sg) (Singapore Government open data portal)
 - **Realtime APIs** — [api.data.gov.sg](https://api.data.gov.sg) (NEA environment, weather forecasts, transport)
 
-No API key is required. All data is publicly accessible.
+All data is publicly accessible. An API key is optional but recommended for higher rate limits.
 
 ## License
 

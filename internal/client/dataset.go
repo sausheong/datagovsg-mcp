@@ -20,13 +20,15 @@ type DatasetClient struct {
 	http    *http.Client
 	v2Base  string
 	ckanURL string
+	apiKey  string
 }
 
-func NewDatasetClient() *DatasetClient {
+func NewDatasetClient(apiKey string) *DatasetClient {
 	return &DatasetClient{
 		http:    &http.Client{Timeout: 15 * time.Second},
 		v2Base:  v2BaseURL,
 		ckanURL: ckanURL,
+		apiKey:  apiKey,
 	}
 }
 
@@ -160,6 +162,9 @@ func (c *DatasetClient) doGet(url string) (*http.Response, error) {
 			return nil, reqErr
 		}
 		req.Header.Set("User-Agent", userAgent)
+		if c.apiKey != "" {
+			req.Header.Set("Authorization", c.apiKey)
+		}
 		resp, err = c.http.Do(req)
 		if err != nil {
 			continue
@@ -300,10 +305,11 @@ func (c *DatasetClient) QueryDataset(datasetID string, filters map[string]string
 	return &body.Result, nil
 }
 
-func NewDatasetClientWithConfig(v2Base, ckanURL string, timeout time.Duration) *DatasetClient {
+func NewDatasetClientWithConfig(v2Base, ckanURL, apiKey string, timeout time.Duration) *DatasetClient {
 	return &DatasetClient{
 		http:    &http.Client{Timeout: timeout},
 		v2Base:  v2Base,
 		ckanURL: ckanURL,
+		apiKey:  apiKey,
 	}
 }

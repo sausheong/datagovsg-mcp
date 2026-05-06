@@ -14,8 +14,9 @@ func main() {
 	addr := flag.String("http", "", "Start streamable HTTP server on this address (e.g. :8080). Omit for STDIO mode.")
 	flag.Parse()
 
-	datasetClient := client.NewDatasetClient()
-	realtimeClient := client.NewRealtimeClient()
+	apiKey := os.Getenv("DATAGOVSG_API_KEY")
+	datasetClient := client.NewDatasetClient(apiKey)
+	realtimeClient := client.NewRealtimeClient(apiKey)
 
 	s := server.NewMCPServer(
 		"datagovsg-mcp",
