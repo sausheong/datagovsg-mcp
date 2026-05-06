@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "datagovsg": {
-      "command": "/Users/sausheong/projects/datagovsg_mcp/datagovsg-mcp",
-      "args": []
-    }
-  }
-}
