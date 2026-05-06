@@ -153,9 +153,10 @@ func (c *DatasetClient) doGet(url string) (*http.Response, error) {
 		resp *http.Response
 		err  error
 	)
-	for attempt := 0; attempt < 2; attempt++ {
+	backoff := []time.Duration{0, 1 * time.Second, 2 * time.Second, 4 * time.Second}
+	for attempt := 0; attempt < len(backoff); attempt++ {
 		if attempt > 0 {
-			time.Sleep(time.Duration(attempt) * 500 * time.Millisecond)
+			time.Sleep(backoff[attempt])
 		}
 		req, reqErr := http.NewRequest(http.MethodGet, url, nil)
 		if reqErr != nil {
@@ -170,13 +171,21 @@ func (c *DatasetClient) doGet(url string) (*http.Response, error) {
 			continue
 		}
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusServiceUnavailable {
+			wait := backoff[min(attempt+1, len(backoff)-1)]
+			if ra := resp.Header.Get("Retry-After"); ra != "" {
+				if secs, parseErr := strconv.Atoi(ra); parseErr == nil {
+					wait = time.Duration(secs) * time.Second
+				}
+			}
 			resp.Body.Close()
+			time.Sleep(wait)
 			continue
 		}
 		return resp, nil
 	}
 	return resp, err
 }
+
 
 func (c *DatasetClient) SearchDatasets(query string, page, limit int) (*DatasetsResult, error) {
 	url := fmt.Sprintf("%s/datasets?query=%s&page=%d&resultPerPage=%d", c.v2Base, url.QueryEscape(query), page, limit)
