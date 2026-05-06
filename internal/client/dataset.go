@@ -191,3 +191,25 @@ func (c *DatasetClient) SearchDatasets(query string, page, limit int) (*Datasets
 	}
 	return &body.Data, nil
 }
+
+func (c *DatasetClient) GetDatasetMetadata(datasetID string) (*DatasetMetadata, error) {
+	url := fmt.Sprintf("%s/datasets/%s/metadata", c.v2Base, datasetID)
+	resp, err := c.doGet(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, apiError(resp.StatusCode, "get_dataset_metadata failed")
+	}
+
+	var body metadataResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	if body.ErrorMsg != "" {
+		return nil, fmt.Errorf("api error: %s", body.ErrorMsg)
+	}
+	return &body.Data, nil
+}

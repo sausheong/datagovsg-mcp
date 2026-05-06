@@ -62,3 +62,40 @@ func TestSearchDatasets_APIError(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 }
+
+func TestGetDatasetMetadata(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v2/public/api/datasets/d_abc/metadata" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(metadataResponse{
+			Code: 0,
+			Data: DatasetMetadata{
+				DatasetId: "d_abc",
+				Name:      "Test Dataset",
+				ColumnMetadata: ColumnMetadata{
+					Order: []string{"c_1"},
+					Map:   map[string]string{"c_1": "period"},
+					MetaMapping: map[string]ColumnMeta{
+						"c_1": {Name: "period", ColumnTitle: "Period", DataType: "Text"},
+					},
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := newTestDatasetClient(srv.URL)
+	meta, err := c.GetDatasetMetadata("d_abc")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if meta.DatasetId != "d_abc" {
+		t.Errorf("expected d_abc, got %s", meta.DatasetId)
+	}
+	if len(meta.ColumnMetadata.Order) != 1 {
+		t.Errorf("expected 1 column, got %d", len(meta.ColumnMetadata.Order))
+	}
+}
