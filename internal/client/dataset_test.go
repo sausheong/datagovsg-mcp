@@ -99,3 +99,66 @@ func TestGetDatasetMetadata(t *testing.T) {
 		t.Errorf("expected 1 column, got %d", len(meta.ColumnMetadata.Order))
 	}
 }
+
+func TestListCollections(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v2/public/api/collections" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(collectionsResponse{
+			Code: 0,
+			Data: CollectionsResult{
+				Collections: []Collection{
+					{CollectionId: "471", Name: "TradeNet Service Centres", ChildDatasets: []string{"d_ea81"}},
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := newTestDatasetClient(srv.URL)
+	result, err := c.ListCollections(1, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Collections) != 1 {
+		t.Fatalf("expected 1 collection, got %d", len(result.Collections))
+	}
+	if result.Collections[0].CollectionId != "471" {
+		t.Errorf("expected 471, got %s", result.Collections[0].CollectionId)
+	}
+}
+
+func TestGetCollectionInfo(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v2/public/api/collections/471/metadata" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(collectionMetaResponse{
+			Code: 0,
+			Data: struct {
+				CollectionMetadata Collection `json:"collectionMetadata"`
+			}{
+				CollectionMetadata: Collection{
+					CollectionId:  "471",
+					Name:          "TradeNet Service Centres",
+					ChildDatasets: []string{"d_ea81"},
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	c := newTestDatasetClient(srv.URL)
+	info, err := c.GetCollectionInfo("471")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.CollectionId != "471" {
+		t.Errorf("expected 471, got %s", info.CollectionId)
+	}
+}

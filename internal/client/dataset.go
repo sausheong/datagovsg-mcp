@@ -213,3 +213,48 @@ func (c *DatasetClient) GetDatasetMetadata(datasetID string) (*DatasetMetadata, 
 	}
 	return &body.Data, nil
 }
+
+func (c *DatasetClient) ListCollections(page, limit int) (*CollectionsResult, error) {
+	url := fmt.Sprintf("%s/collections?page=%d&resultPerPage=%d", c.v2Base, page, limit)
+	resp, err := c.doGet(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, apiError(resp.StatusCode, "list_collections failed")
+	}
+
+	var body collectionsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	if body.ErrorMsg != "" {
+		return nil, fmt.Errorf("api error: %s", body.ErrorMsg)
+	}
+	return &body.Data, nil
+}
+
+func (c *DatasetClient) GetCollectionInfo(collectionID string) (*Collection, error) {
+	url := fmt.Sprintf("%s/collections/%s/metadata", c.v2Base, collectionID)
+	resp, err := c.doGet(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, apiError(resp.StatusCode, "get_collection_info failed")
+	}
+
+	var body collectionMetaResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil, err
+	}
+	if body.ErrorMsg != "" {
+		return nil, fmt.Errorf("api error: %s", body.ErrorMsg)
+	}
+	col := body.Data.CollectionMetadata
+	return &col, nil
+}
