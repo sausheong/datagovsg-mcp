@@ -2,6 +2,8 @@
 
 An MCP (Model Context Protocol) server that gives AI assistants access to Singapore Government public data via [data.gov.sg](https://data.gov.sg).
 
+> **Tip:** Get a free API key at [data.gov.sg](https://data.gov.sg) and set `DATAGOVSG_API_KEY` for higher rate limits.
+
 ## Tools
 
 ### Dataset tools
@@ -97,7 +99,10 @@ Add to `.claude/mcp.json` in your project:
 {
   "mcpServers": {
     "datagovsg": {
-      "command": "/path/to/datagovsg-mcp"
+      "command": "/path/to/datagovsg-mcp",
+      "env": {
+        "DATAGOVSG_API_KEY": "your_api_key_here"
+      }
     }
   }
 }
@@ -111,7 +116,10 @@ Add to `claude_desktop_config.json`:
 {
   "mcpServers": {
     "datagovsg": {
-      "command": "/path/to/datagovsg-mcp"
+      "command": "/path/to/datagovsg-mcp",
+      "env": {
+        "DATAGOVSG_API_KEY": "your_api_key_here"
+      }
     }
   }
 }
